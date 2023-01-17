@@ -2,11 +2,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class DatabaseNode {
+public class DatabaseClient {
 
-    private static int key, value;
-
-    public DatabaseNode() {
+    public DatabaseClient() {
     }
 
     public void showArguments(List<List<String>> arguments){
@@ -17,20 +15,16 @@ public class DatabaseNode {
         }
     }
 
-    private void connect(String string){
+    private void gateway(String string){
 
     }
 
-    private void tcpport(String string){
-        int localPort = Integer.parseInt(string);
+    private void operation(String operation, String argument){
+
     }
 
-    private void record(String string){
-        this.key = Integer.parseInt(string.split(":")[0]);
-        this.value = Integer.parseInt(string.split(":")[1]);
-    }
     public static void main(String[] args) {
-        DatabaseNode databaseNode = new DatabaseNode();
+        DatabaseClient databaseClient = new DatabaseClient();
         List<String> tmpList = new ArrayList<>(args.length);
         List<List<String>> arguments = new ArrayList<>();
         for (String s : args)
@@ -46,16 +40,12 @@ public class DatabaseNode {
 
         for (List<String> l : arguments) {
             switch (l.get(0)){
-                case "-connect": {
-                    databaseNode.connect(l.get(1));
+                case "-gateway": {
+                    databaseClient.gateway(l.get(1));
                     break;
                 }
-                case "-tcpport": {
-                    databaseNode.tcpport(l.get(1));
-                    break;
-                }
-                case "-record": {
-                    databaseNode.record(l.get(1));
+                case "-operation": {
+                    databaseClient.operation(l.get(1),l.get(2));
                     break;
                 }
                 default:{
