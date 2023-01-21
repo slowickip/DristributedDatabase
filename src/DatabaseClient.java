@@ -1,84 +1,60 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.net.*;
+import java.io.*;
 
 public class DatabaseClient {
-
-    Socket socket = null;
-    PrintWriter out = null;
-    BufferedReader in = null;
-    InetSocketAddress address = null;
-
-    public DatabaseClient() {
-    }
-
-    public void showArguments(List<List<String>> arguments){
-        for (List<String> l: arguments){
-            for (String s : l)
-                System.out.print(s+" ");
-            System.out.println();
-        }
-    }
-
-    private void gateway(String string){
-        address = new InetSocketAddress(string.split(":")[0], Integer.parseInt(string.split(":")[1]));
-
-        try {
-            socket = new Socket();
-            socket.connect(address, 500);
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        }
-        catch (UnknownHostException e) {
-            System.out.println("Unknown host");
-            System.exit(-1);
-        }
-        catch  (IOException e) {
-            System.out.println("No I/O");
-            System.exit(-1);
-        }
-    }
-
-    private void operation(String operation, String argument){
-
-    }
-
-    public static void main(String[] args) {
-        DatabaseClient databaseClient = new DatabaseClient();
-        List<String> tmpList = new ArrayList<>(args.length);
-        List<List<String>> arguments = new ArrayList<>();
-        for (String s : args)
-            tmpList.add(s);
-
-        while(!tmpList.isEmpty()){
-            // If argument starts with "-" create new node inside "arguments"
-            if (Pattern.compile("^-.").matcher(tmpList.get(0)).find())
-                arguments.add(new ArrayList<>());
-            arguments.get(arguments.size()-1).add(tmpList.get(0));
-            tmpList.remove(0);
-        }
-
-        for (List<String> l : arguments) {
-            switch (l.get(0)){
-                case "-gateway": {
-                    databaseClient.gateway(l.get(1));
+    public static void main(String[] args) throws IOException {
+        // parameter storage
+	String gateway = null;
+        int port = 0;
+        String identifier = null;
+        String command = null;
+        
+        // Parameter scan loop
+        for(int i=0; i<args.length; i++) {
+            switch (args[i]) {
+                case "-gateway":
+                    String[] gatewayArray = args[++i].split(":");
+                    gateway = gatewayArray[0];
+                    port = Integer.parseInt(gatewayArray[1]);
                     break;
-                }
-                case "-operation": {
-                    databaseClient.operation(l.get(1),l.get(2));
+                case "-operation":
                     break;
-                }
-                default:{
-                    throw new IllegalStateException("Unexpected value: " + l.get(0));
-                }
+                default:
+                    if(command == null) command = args[i];
+                    else if(! "TERMINATE".equals(command)) command += " " + args[i];
             }
         }
+
+        // communication socket and streams
+	Socket netSocket;
+	PrintWriter out;
+	BufferedReader in;
+	try {
+            System.out.println("Connecting with: " + gateway + " at port " + port);
+	    netSocket = new Socket(gateway, port);
+	    out = new PrintWriter(netSocket.getOutputStream(), true);
+	    in = new BufferedReader(new InputStreamReader(netSocket.getInputStream()));
+            System.out.println("Connected");
+            
+            System.out.println("Sending: " + command);
+            out.println(command);
+            // Read and print out the response
+            String response;
+            while ((response = in.readLine()) != null) {
+                System.out.println(response);
+            }
+
+            // Terminate - close all the streams and the socket
+            out.close();
+            in.close();
+            netSocket.close();
+	} catch (UnknownHostException e) {
+	    System.err.println("Unknown host: " + gateway + ".");
+	    System.exit(1);
+	} catch (IOException e) {
+	    System.err.println("No connection with " + gateway + ".");
+	    System.exit(1);
+	}
+
     }
 }
