@@ -30,29 +30,29 @@ public class DatabaseClient {
 	PrintWriter out;
 	BufferedReader in;
 	try {
-            System.out.println("Connecting with: " + gateway + " at port " + port);
+            System.out.println("C: Connecting with: " + gateway + " at port " + port);
 	    netSocket = new Socket(gateway, port);
 	    out = new PrintWriter(netSocket.getOutputStream(), true);
 	    in = new BufferedReader(new InputStreamReader(netSocket.getInputStream()));
-            System.out.println("Connected");
-            
-            System.out.println("Sending: " + command);
+            System.out.println("C: Connected");
+            System.out.println("C: Sending: " + command);
             out.println(command);
             // Read and print out the response
             String response;
             while ((response = in.readLine()) != null) {
-                System.out.println(response);
+                System.out.println("C: "+response);
             }
 
             // Terminate - close all the streams and the socket
             out.close();
             in.close();
             netSocket.close();
+            System.exit(1);
 	} catch (UnknownHostException e) {
-	    System.err.println("Unknown host: " + gateway + ".");
+	    System.err.println("C: Unknown host: " + gateway + ".");
 	    System.exit(1);
 	} catch (IOException e) {
-	    System.err.println("No connection with " + gateway + ".");
+	    System.err.println("C: No connection with " + gateway + ".");
 	    System.exit(1);
 	}
 

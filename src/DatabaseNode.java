@@ -1,18 +1,40 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.net.UnknownHostException;
 
 public class DatabaseNode {
 
     private static int key, value;
+    private static HashMap<String,NodeConnection> map;
 
     public DatabaseNode() {
+        map = new HashMap<>();
+    }
+
+    public static int getKey() {
+        return key;
+    }
+
+    public static int getValue() {
+        return value;
+    }
+
+    public static void setKey(int key) {
+        DatabaseNode.key = key;
+    }
+
+    public static void setValue(int value) {
+        DatabaseNode.value = value;
+    }
+
+    public static HashMap<String, NodeConnection> getMap() {
+        return map;
     }
 
     public void showArguments(List<List<String>> arguments){
@@ -23,73 +45,41 @@ public class DatabaseNode {
         }
     }
 
-    private void connect(String string){
-
+    private void connect(String string) throws IOException {
+        String ip = string.split(":")[0];
+        int port = Integer.parseInt(string.split(":")[1]);
+        if (ip.equals("localhost"))
+            ip = InetAddress.getLocalHost().getHostAddress();
+        String stringAddress = ip+":"+port;
+        InetSocketAddress address = new InetSocketAddress(ip, port);
+        Socket tmpSocket = new Socket();
+        try {
+            tmpSocket.connect(address,1000);
+        } catch (UnknownHostException e) {
+            System.out.println("Could not connect to "+string);
+        }
+        catch  (IOException e) {
+            System.out.println("Could not connect to "+string);
+        }
+        if (tmpSocket.isConnected()) {
+            getMap().put(stringAddress, new NodeConnection(tmpSocket));
+            getMap().get(stringAddress).println("add-to-map " + ServerAcceptThread.getAddress());
+            System.out.println("Connected to " + stringAddress);
+        }
     }
 
     private void tcpport(String string){
-        int localPort = Integer.parseInt(string);
-
-        ServerSocket server = null;
-        Socket client = null;
-        try {
-            server = new ServerSocket(localPort);
-        }
-        catch (IOException e) {
-            System.out.println("Could not listen");
-            System.exit(-1);
-        }
-
-        System.out.println("Server listens on port: " + server.getLocalPort());
-
-        while(true) {
-            try {
-                client = server.accept();
-            }
-            catch (IOException e) {
-                System.out.println("Accept failed");
-                System.exit(-1);
-            }
-
-            (new ServerThread(client)).start();
-        }
-
+        ServerAcceptThread sat = new ServerAcceptThread(Integer.parseInt(string));
+        sat.start();
     }
 
     private void record(String string){
         this.key = Integer.parseInt(string.split(":")[0]);
         this.value = Integer.parseInt(string.split(":")[1]);
+        System.out.println("Key and value set to "+getKey()+":"+getValue());
     }
 
-    public static class ServerThread extends Thread {
-        private final Socket socket;
-
-        public ServerThread(Socket socket) {
-            super();
-            this.socket = socket;
-        }
-
-        public void run() {
-            try {
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                //tutaj kod
-                String in1 = in.readLine();
-                System.out.println(in1);
-            } catch (IOException e1) {
-                // do nothing
-                System.out.println('1');
-            }
-            try {
-                socket.close();
-            } catch (IOException e) {
-                // do nothing
-                System.out.println('2');
-            }
-        }
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         DatabaseNode databaseNode = new DatabaseNode();
         List<String> tmpList = new ArrayList<>(args.length);
         List<List<String>> arguments = new ArrayList<>();
